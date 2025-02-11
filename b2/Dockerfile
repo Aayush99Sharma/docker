@@ -1,52 +1,40 @@
-# Use Python 3.8 as the base image
-FROM python:3.8
+FROM python:3.10
 
-# Set the working directory in the container
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
-    git \
-    python3.8-dev \
-    default-libmysqlclient-dev \
-    libssl-dev \
-    build-essential \
-    gcc \
-    netcat-openbsd \
- && rm -rf /var/lib/apt/lists/*
+# Set build-time argument
+#ARG MYSQL_ROOT_PASSWORD
+#ARG DB_NAME
+#ARG DB_USER
+#ARG DB_PASSWORD
+#ARG DB_HOST
+#ARG DB_PORT
 
-# Securely clone the repository (using ARG for GitHub token)
-ARG GIT_ACCESS_TOKEN
-RUN git clone --depth=1 https://${GIT_ACCESS_TOKEN}@github.com/Aayush99Sharma/chatapp.git /app
+# Set environment variables (so they persist at runtime)
+#ENV MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+#ENV DB_NAME=${DB_NAME}
+#ENV DB_USER=${DB_USER}
+#ENV DB_PASSWORD=${DB_PASSWORD}
+#ENV DB_HOST=${DB_HOST}
+#ENV DB_PORT=${DB_PORT}
 
-# Set working directory to Django project
-WORKDIR /app/fundoo
 
-# Create a virtual environment
-RUN python -m venv venv
+# Copy the project files
+#COPY . .
+RUN git clone https://github.com/Aayush99Sharma/chatapp-modified-ubuntu-22.04.git /app
+RUN echo $DB_HOST
 
-# Activate the virtual environment and install dependencies
-RUN /bin/bash -c "source venv/bin/activate && pip install --no-cache-dir -r /app/requirements.txt"
-RUN /bin/bash -c "source venv/bin/activate && pip install --no-cache-dir mysqlclient"
+# Install dependencies
+RUN pip3 install --no-cache-dir django mysqlclient
+RUN pip3 install --no-cache-dir -r requirements.txt
 
-# Pass database credentials at build time
-ARG DB_HOST
-ARG DB_PORT
-ARG DB_NAME
-ARG DB_USER
-ARG DB_PASSWORD
+# Run migrations during the build process
+# Wait for MySQL to be ready before migrating
+#RUN python3 fundoo/manage.py migrate
 
-# Set environment variables inside the container
-ENV DB_HOST=${DB_HOST}
-ENV DB_PORT=${DB_PORT}
-ENV DB_NAME=${DB_NAME}
-ENV DB_USER=${DB_USER}
-ENV DB_PASSWORD=${DB_PASSWORD}
-
-# Run Django migrations at build time
-RUN /bin/bash -c "source venv/bin/activate && python manage.py makemigrations && python manage.py migrate"
-
-# Expose Django port
+# Expose the port Django runs on
 EXPOSE 8000
 
-# Start Django server using the virtual environment
-CMD ["/bin/bash", "-c", "source venv/bin/activate && python manage.py runserver 0.0.0.0:8000"]
+# Start the Django server
+#CMD ["python3", "fundoo/manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["bash", "-c", "cd fundoo && python3 manage.py migrate && python3 manage.py runserver 0.0.0.0:8000"]

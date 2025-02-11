@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y git
 ARG GIT_ACCESS_TOKEN
 
 # Use the token to securely clone the private repository
-RUN git clone https://${GIT_ACCESS_TOKEN}@github.com/Aayush99Sharma/chatapp.git /app
+#RUN git clone https://${GIT_ACCESS_TOKEN}@github.com/Aayush99Sharma/chatapp.git /app
+RUN git clone --depth=1 https://${GIT_ACCESS_TOKEN}@github.com/Aayush99Sharma/chatapp.git /app
 
 # Set the working directory to the Django project directory
 WORKDIR /app/fundoo
@@ -28,4 +29,6 @@ RUN pip install --no-cache-dir mysqlclient
 EXPOSE 8000
 
 # Run migrations before starting the server using bash
-CMD ["bash", "-c", "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+#CMD ["bash", "-c", "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+#CMD ["venv/bin/python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["bash", "-c", "venv/bin/python manage.py runserver 0.0.0.0:8000"]
