@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  db:
+    build:
+      context: /home/docker/docker-chatapp/database  # Path to your MySQL Dockerfile
+    image: custom-mysql  # Name of the built image
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}  # Required for MySQL initialization
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - chatapp-network
+
+  backend:
+    build:
+      context: /home/docker/docker-chatapp/b2  # Path to your Node.js Dockerfile
+    container_name: backend
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - chatapp-network
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: /home/docker/docker-chatapp/frontend  # Path to your frontend Dockerfile
+    container_name: frontend
+    restart: always
+    depends_on:
+      - backend
+    networks:
+      - chatapp-network
+    ports:
+      - "80:80"  # Expose frontend service on port 80
+
+volumes:
+  db_data:
+
+networks:
+  chatapp-network:
+    driver: bridge
